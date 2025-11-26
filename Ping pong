@@ -1,0 +1,88 @@
+import pygame
+import sys
+import time
+
+pygame.init()
+WIDTH, HEIGHT = 800, 600
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Ping Pong")
+clock = pygame.time.Clock()
+font = pygame.font.SysFont(None, 48)
+win_font = pygame.font.SysFont(None, 64)
+
+paddle_width, paddle_height = 10, 100
+ball_size = 15
+leva_palka = pygame.Rect(50, HEIGHT//2 - paddle_height//2, paddle_width, paddle_height)
+prava_palka = pygame.Rect(WIDTH - 60, HEIGHT//2 - paddle_height//2, paddle_width, paddle_height)
+micek = pygame.Rect(WIDTH//2 - ball_size//2, HEIGHT//2 - ball_size//2, ball_size, ball_size)
+micek_rychlost_x = 4
+micek_rychlost_y = 4
+paddle_speed = 6
+
+left_skore = 0
+right_skore = 0
+max_skore = 10
+
+konec_hry = False
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if not konec_hry:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and leva_palka.top > 0:
+            leva_palka.y -= paddle_speed
+        if keys[pygame.K_s] and leva_palka.bottom < HEIGHT:
+            leva_palka.y += paddle_speed
+        if keys[pygame.K_UP] and prava_palka.top > 0:
+            prava_palka.y -= paddle_speed
+        if keys[pygame.K_DOWN] and prava_palka.bottom < HEIGHT:
+            prava_palka.y += paddle_speed
+
+        micek.x += micek_rychlost_x
+        micek.y += micek_rychlost_y
+
+        if micek.top <= 0 or micek.bottom >= HEIGHT:
+            micek_rychlost_y *= -1
+        if micek.colliderect(leva_palka) or micek.colliderect(prava_palka):
+            micek_rychlost_x *= -1
+
+        if micek.left <= 0:
+            right_skore += 1
+            micek.center = (WIDTH//2, HEIGHT//2)
+            micek_rychlost_x *= -1
+        if micek.right >= WIDTH:
+            left_skore += 1
+            micek.center = (WIDTH//2, HEIGHT//2)
+            micek_rychlost_x *= -1
+
+        if left_skore == max_skore or right_skore == max_skore:
+            konec_hry = True
+            vitez = "Zelený hráč" if left_skore == max_skore else "Modrý hráč"
+
+    screen.fill(BLACK)
+    pygame.draw.rect(screen, GREEN, leva_palka)
+    pygame.draw.rect(screen, BLUE, prava_palka)
+    pygame.draw.ellipse(screen, WHITE, micek)
+    pygame.draw.aaline(screen, WHITE, (WIDTH//2, 0), (WIDTH//2, HEIGHT))
+
+    score_text = font.render(f"{left_skore}   {right_skore}", True, WHITE)
+    screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, 20))
+
+    if konec_hry:
+        win_text = win_font.render(f"Vyhrává {vitez}", True, WHITE)
+        screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2 - 30))
+        pygame.display.flip()
+        time.sleep(3)
+        pygame.quit()
+        sys.exit()
+
+    pygame.display.flip()
+    clock.tick(60)
